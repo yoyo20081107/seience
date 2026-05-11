@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>高中物理段考復習系統 - 功與能量</title>
+
+  <!-- 基礎樣式 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- KaTeX 數學公式 (用於美化公式) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+
+    body {
+      margin: 0;
+      background: #0f172a; /* 深藍色背景，避免全黑 */
+      color: #f1f5f9;
+      font-family: 'Noto+Sans+TC', sans-serif;
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .math-box {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      margin: 1rem 0;
+      text-align: center;
+      color: #60a5fa;
+      font-size: 1.5rem;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .topic-card {
+      transition: all 0.3s ease;
+    }
+    .topic-card:hover {
+      transform: translateY(-5px);
+      border-color: #3b82f6;
+      box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.3);
+    }
+
+    .hidden { display: none; }
+
+    /* 導覽列按鈕樣式 */
+    .nav-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      font-weight: bold;
+      color: #94a3b8;
+    }
+    .nav-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+    .nav-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="glass sticky top-0 z-50 px-6 py-4 border-b border-white/10">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-blue-600 p-1.5 rounded-lg text-white font-bold">Φ</div>
+        <h1 class="text-xl font-black text-white tracking-tighter">物理大師 v2.0</h1>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="showPage('home')" id="btn-home" class="nav-btn active">主頁</button>
+        <button onclick="showPage('formula')" id="btn-formula" class="nav-btn">公式</button>
+        <button onclick="showPage('quiz')" id="btn-quiz" class="nav-btn">測驗</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-6 py-10">
+
+    <!-- Home Page -->
+    <div id="page-home" class="page-content space-y-8">
+      <div class="glass p-10 rounded-3xl border-l-8 border-blue-500 shadow-2xl">
+        <h2 class="text-5xl font-black mb-6 text-white">功與能量</h2>
+        <p class="text-xl text-slate-300 leading-relaxed mb-6">
+          這是高中物理的核心單元。記住：<span class="text-blue-400 font-bold">能量不會憑空產生，也不會憑空消失。</span>
+        </p>
+        <div class="flex gap-4">
+          <button onclick="showPage('formula')" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold transition-all">開始復習</button>
+          <button onclick="showPage('quiz')" class="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl font-bold transition-all">挑戰測驗</button>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="glass p-8 rounded-2xl topic-card">
+          <h3 class="text-2xl font-bold text-blue-400 mb-4">重點 A：功的定義</h3>
+          <p class="text-slate-400 leading-relaxed">
+            只有當「力」與「位移」不垂直時，力才會作功。同向為正功（增加能量），反向為負功（消耗能量）。
+          </p>
+        </div>
+        <div class="glass p-8 rounded-2xl topic-card">
+          <h3 class="text-2xl font-bold text-amber-400 mb-4">重點 B：力學能守恆</h3>
+          <p class="text-slate-400 leading-relaxed">
+            在只有重力或彈力作功的情況下，動能與位能的和是固定的。這是解拋體運動的捷徑！
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formula Page -->
+    <div id="page-formula" class="page-content hidden space-y-6">
+      <h2 class="text-3xl font-bold text-center mb-10">必背公式總整理</h2>
+      <div id="formula-list" class="space-y-6">
+        <!-- Formulas will be injected here -->
+      </div>
+    </div>
+
+    <!-- Quiz Page -->
+    <div id="page-quiz" class="page-content hidden">
+      <div class="glass p-10 rounded-3xl max-w-2xl mx-auto shadow-2xl border border-blue-500/30">
+        <div id="quiz-progress" class="text-blue-500 font-bold text-sm mb-4"></div>
+        <h3 id="quiz-question" class="text-2xl font-bold mb-10 leading-relaxed text-white"></h3>
+        
+        <div id="quiz-options" class="space-y-4">
+          <!-- Options will be injected here -->
+        </div>
+
+        <div id="quiz-feedback" class="hidden mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
+          <p id="quiz-answer-text" class="font-bold text-blue-400 mb-2"></p>
+          <p id="quiz-explain" class="text-slate-300 text-sm mb-8"></p>
+          <button onclick="nextQuiz()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg">
+            下一題
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="py-20 text-center text-slate-500 text-sm">
+    © 2026 高中物理段考復習系統 ｜ 祝你考試順利
+  </footer>
+
+  <script>
+    // 資料定義
+    const formulas = [
+      { title: "功 (Work)", tex: "W = F d \\cos\\theta", unit: "焦耳 (J)", desc: "力對物體作功的定義。" },
+      { title: "動能 (Kinetic Energy)", tex: "K = \\frac{1}{2} m v^2", unit: "焦耳 (J)", desc: "運動物體具有的能量。" },
+      { title: "重力位能 (Potential Energy)", tex: "U = m g h", unit: "焦耳 (J)", desc: "在地表附近的位能公式。" },
+      { title: "功能定理", tex: "W_{net} = \\Delta K", unit: "焦耳 (J)", desc: "合力作功等於動能變化量。" },
+      { title: "彈力位能", tex: "U_s = \\frac{1}{2} k x^2", unit: "焦耳 (J)", desc: "彈簧壓縮或伸長時儲存的能量。" }
+    ];
+
+    const quizzes = [
+      { q: "當物體受力方向與運動方向垂直時，該力作功為？", options: ["正功", "負功", "零", "無法判斷"], correct: 2, explain: "功的公式為 W = Fd cosθ，當夾角 θ = 90° 時，cos 90° = 0，故作功為零。" },
+      { q: "一物體質量 2kg，由靜止受力加速至 5m/s，此過程中外力作功多少？", options: ["5 J", "10 J", "25 J", "50 J"], correct: 2, explain: "根據功能定理，作功 W = ΔK = 1/2 * 2 * (5^2 - 0) = 25 J。" },
+      { q: "下列關於力學能守恆的敘述，何者正確？", options: ["任何情況下都守恆", "有摩擦力時也守恆", "只有保守力作功時才守恆", "動能永遠等於位能"], correct: 2, explain: "只有在系統僅受保守力（如重力、彈力）作功，且沒有非保守力（如摩擦力）作功時，力學能才會守恆。" }
+    ];
+
+    let currentQuizIdx = 0;
+    let quizAnswered = false;
+
+    // 頁面切換邏輯
+    function showPage(pageId) {
+      document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page-' + pageId).classList.remove('hidden');
+      
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + pageId).classList.add('active');
+
+      if(pageId === 'formula') renderFormulas();
+      if(pageId === 'quiz') renderQuiz();
+      
+      window.scrollTo(0,0);
+    }
+
+    // 渲染公式
+    function renderFormulas() {
+      const list = document.getElementById('formula-list');
+      list.innerHTML = '';
+      formulas.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'glass p-8 rounded-2xl';
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold text-white">${f.title}</h3>
+            <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-md text-xs font-bold">${f.unit}</span>
+          </div>
+          <div class="math-box" id="math-${f.title.replace(/\s/g, '')}"></div>
+          <p class="text-slate-400 text-sm mt-4">${f.desc}</p>
+        `;
+        list.appendChild(card);
+        
+        // 使用 KaTeX 渲染
+        setTimeout(() => {
+          const mathDiv = document.getElementById(`math-${f.title.replace(/\s/g, '')}`);
+          if (window.katex) {
+            katex.render(f.tex, mathDiv, { displayMode: true, throwOnError: false });
+          } else {
+            mathDiv.textContent = f.tex;
+          }
+        }, 10);
+      });
+    }
+
+    // 渲染測驗
+    function renderQuiz() {
+      quizAnswered = false;
+      const q = quizzes[currentQuizIdx];
+      document.getElementById('quiz-progress').textContent = `問題 ${currentQuizIdx + 1} / ${quizzes.length}`;
+      document.getElementById('quiz-question').textContent = q.q;
+      document.getElementById('quiz-feedback').classList.add('hidden');
+      
+      const optionsContainer = document.getElementById('quiz-options');
+      optionsContainer.innerHTML = '';
+      
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left p-5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-blue-500 transition-all flex items-center gap-4 group';
+        btn.innerHTML = `
+          <span class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm font-bold group-hover:bg-blue-600 transition-colors">${String.fromCharCode(65+i)}</span>
+          <span class="text-slate-200 font-medium">${opt}</span>
+        `;
+        btn.onclick = () => handleAnswer(i);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(idx) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+      
+      const q = quizzes[currentQuizIdx];
+      const feedback = document.getElementById('quiz-feedback');
+      const ansText = document.getElementById('quiz-answer-text');
+      const explain = document.getElementById('quiz-explain');
+      
+      feedback.classList.remove('hidden');
+      if (idx === q.correct) {
+        ansText.textContent = "✅ 太棒了！回答正確";
+        ansText.className = "font-bold text-green-400 mb-2 text-xl";
+      } else {
+        ansText.textContent = `❌ 可惜答錯了。正確答案是 (${String.fromCharCode(65 + q.correct)})`;
+        ansText.className = "font-bold text-red-400 mb-2 text-xl";
+      }
+      explain.textContent = q.explain;
+
+      // 標示選項顏色
+      const btns = document.getElementById('quiz-options').children;
+      for (let i = 0; i < btns.length; i++) {
+        if (i === q.correct) {
+          btns[i].classList.add('border-green-500', 'bg-green-500/10');
+        } else if (i === idx) {
+          btns[i].classList.add('border-red-500', 'bg-red-500/10');
+        }
+        btns[i].style.cursor = 'default';
+      }
+    }
+
+    function nextQuiz() {
+      currentQuizIdx = (currentQuizIdx + 1) % quizzes.length;
+      renderQuiz();
+    }
+
+    // 初始化顯示主頁
+    window.onload = () => showPage('home');
+  </script>
+</body>
+</html>
