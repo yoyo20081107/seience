@@ -1,0 +1,480 @@
+# physics_review.html
+
+```html
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics Final Review System</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      overflow-x: hidden;
+      font-family: Consolas, monospace;
+      color: #22c55e;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(34, 197, 94, 0.5);
+    }
+
+    .scanlines::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,0.02) 50%, rgba(0,0,0,0.15) 50%),
+        linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.03), rgba(0,0,255,0.03));
+      background-size: 100% 4px, 4px 100%;
+      z-index: 99;
+    }
+
+    .card-glow {
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.15);
+    }
+
+    .formula-box {
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      background: rgba(34, 197, 94, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const formulas = [
+      {
+        title: "牛頓第二運動定律",
+        formula: "F = ma",
+        desc: "合力 = 質量 × 加速度",
+        extra: "幾乎所有力學題都會用到"
+      },
+      {
+        title: "功",
+        formula: "W = Fd cosθ",
+        desc: "力與位移方向夾角要注意",
+        extra: "θ=0° 時：W=Fd"
+      },
+      {
+        title: "動能",
+        formula: "K = 1/2 mv²",
+        desc: "速度平方超重要",
+        extra: "速度變兩倍，動能變四倍"
+      },
+      {
+        title: "功能定理",
+        formula: "W = ΔK",
+        desc: "外力作功 = 動能變化",
+        extra: "最常考"
+      },
+      {
+        title: "功率",
+        formula: "P = W/t = Fv",
+        desc: "單位：瓦特 W",
+        extra: "速度與力同方向時可用 Fv"
+      },
+      {
+        title: "重力位能",
+        formula: "U = mgh",
+        desc: "地表附近適用",
+        extra: "高度差才重要"
+      },
+      {
+        title: "萬有引力位能",
+        formula: "U = -GMm/r",
+        desc: "天體運動常考",
+        extra: "距離越遠，位能越接近 0"
+      },
+      {
+        title: "萬有引力",
+        formula: "F = GMm/r²",
+        desc: "老師特別提醒要背",
+        extra: "平方反比"
+      },
+      {
+        title: "彈力位能",
+        formula: "U = 1/2 kx²",
+        desc: "彈簧題核心",
+        extra: "伸長與壓縮都適用"
+      },
+      {
+        title: "胡克定律",
+        formula: "F = kx",
+        desc: "彈簧恢復力",
+        extra: "k 越大越硬"
+      },
+      {
+        title: "力學能守恆",
+        formula: "K₁ + U₁ = K₂ + U₂",
+        desc: "無非保守力時成立",
+        extra: "自由落體、拋體超常用"
+      },
+      {
+        title: "重力作功",
+        formula: "W = mg(h₁-h₂)",
+        desc: "下降作正功",
+        extra: "與路徑無關"
+      }
+    ];
+
+    const quizData = [
+      {
+        q: "質量 2kg 的物體速度為 3m/s，動能是多少？",
+        a: "9 J",
+        explain: "K = 1/2 mv² = 1/2 × 2 × 3² = 9J"
+      },
+      {
+        q: "功的公式是什麼？",
+        a: "W = Fd cosθ",
+        explain: "注意角度問題"
+      },
+      {
+        q: "彈簧位能公式？",
+        a: "U = 1/2 kx²",
+        explain: "x 要平方"
+      },
+      {
+        q: "功能定理代表什麼？",
+        a: "外力作功等於動能變化",
+        explain: "W = ΔK"
+      },
+      {
+        q: "功率單位？",
+        a: "瓦特",
+        explain: "英文 Watt"
+      },
+      {
+        q: "自由落體時守恆的是什麼？",
+        a: "力學能",
+        explain: "忽略空氣阻力"
+      }
+    ];
+
+    function App() {
+      const [page, setPage] = useState('home');
+      const [index, setIndex] = useState(0);
+
+      const nextQuestion = () => {
+        if(index < quizData.length - 1){
+          setIndex(index + 1);
+        } else {
+          setIndex(0);
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-black text-green-500 scanlines">
+
+          <header className="border-b border-green-500/30 p-5 sticky top-0 bg-black/90 backdrop-blur z-50">
+            <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-4 items-center">
+              <div>
+                <h1 className="text-3xl font-bold tracking-widest">
+                  &gt; PHYSICS_REVIEW_SYSTEM
+                </h1>
+                <p className="text-green-500/60 text-sm mt-1">
+                  功與動能｜位能｜力學能守恆｜彈簧｜功率
+                </p>
+              </div>
+
+              <div className="flex gap-3 flex-wrap justify-center">
+                <button
+                  onClick={() => setPage('home')}
+                  className="border border-green-500 px-4 py-2 hover:bg-green-500 hover:text-black transition"
+                >
+                  主頁
+                </button>
+
+                <button
+                  onClick={() => setPage('formula')}
+                  className="border border-green-500 px-4 py-2 hover:bg-green-500 hover:text-black transition"
+                >
+                  公式總整理
+                </button>
+
+                <button
+                  onClick={() => setPage('tips')}
+                  className="border border-green-500 px-4 py-2 hover:bg-green-500 hover:text-black transition"
+                >
+                  必考觀念
+                </button>
+
+                <button
+                  onClick={() => setPage('quiz')}
+                  className="border border-green-500 px-4 py-2 hover:bg-green-500 hover:text-black transition"
+                >
+                  快速測驗
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-6xl mx-auto p-6">
+
+            {page === 'home' && (
+              <div className="space-y-6">
+
+                <div className="border border-green-500/30 p-8 card-glow bg-green-500/5">
+                  <h2 className="text-4xl font-bold mb-4">
+                    段考物理復習系統
+                  </h2>
+
+                  <p className="text-green-300 leading-8 text-lg">
+                    你這次主要考的是「功與動能」、「位能」、「力學能守恆」。
+                    這幾章其實都圍繞在同一件事情：
+                    能量怎麼轉換。
+                  </p>
+
+                  <div className="mt-6 border border-yellow-500/30 bg-yellow-500/10 p-4 text-yellow-300 leading-8">
+                    老師說最重要的是公式要熟。
+                    尤其是：
+                    W=Fdcosθ、W=ΔK、mgh、1/2mv²、1/2kx²、F=ma、F=GMm/r²。
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-5">
+
+                  <div className="border border-green-500/30 p-5 card-glow">
+                    <h3 className="text-2xl font-bold mb-3">功與動能</h3>
+                    <ul className="space-y-2 text-green-300">
+                      <li>• 定力作功</li>
+                      <li>• 變力作功</li>
+                      <li>• 功能定理</li>
+                      <li>• 功率</li>
+                    </ul>
+                  </div>
+
+                  <div className="border border-green-500/30 p-5 card-glow">
+                    <h3 className="text-2xl font-bold mb-3">位能</h3>
+                    <ul className="space-y-2 text-green-300">
+                      <li>• 重力位能</li>
+                      <li>• 萬有引力位能</li>
+                      <li>• 彈性位能</li>
+                      <li>• 位能變化</li>
+                    </ul>
+                  </div>
+
+                  <div className="border border-green-500/30 p-5 card-glow">
+                    <h3 className="text-2xl font-bold mb-3">力學能守恆</h3>
+                    <ul className="space-y-2 text-green-300">
+                      <li>• 保守力</li>
+                      <li>• 能量轉換</li>
+                      <li>• 自由落體</li>
+                      <li>• 彈簧系統</li>
+                    </ul>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
+            {page === 'formula' && (
+              <div>
+                <h2 className="text-4xl font-bold mb-8">
+                  必背公式總整理
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {formulas.map((item, i) => (
+                    <div
+                      key={i}
+                      className="formula-box p-6 card-glow"
+                    >
+                      <div className="text-sm text-green-500/60 mb-2">
+                        SYSTEM_FORMULA_{String(i + 1).padStart(2, '0')}
+                      </div>
+
+                      <h3 className="text-2xl font-bold mb-4">
+                        {item.title}
+                      </h3>
+
+                      <div className="text-4xl font-bold text-white mb-4 break-all">
+                        {item.formula}
+                      </div>
+
+                      <p className="text-green-300 leading-7">
+                        {item.desc}
+                      </p>
+
+                      <div className="mt-4 border-l-4 border-green-500 pl-3 text-green-400">
+                        {item.extra}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {page === 'tips' && (
+              <div className="space-y-6">
+
+                <h2 className="text-4xl font-bold">
+                  必考觀念整理
+                </h2>
+
+                <div className="border border-green-500/30 p-6 card-glow">
+                  <h3 className="text-2xl font-bold mb-4 text-yellow-300">
+                    1. 功的正負
+                  </h3>
+
+                  <ul className="space-y-3 leading-8 text-green-300">
+                    <li>• 同方向：正功</li>
+                    <li>• 反方向：負功</li>
+                    <li>• 垂直方向：作功 = 0</li>
+                  </ul>
+                </div>
+
+                <div className="border border-green-500/30 p-6 card-glow">
+                  <h3 className="text-2xl font-bold mb-4 text-yellow-300">
+                    2. 功能定理超重要
+                  </h3>
+
+                  <p className="text-green-300 leading-8">
+                    外力對物體作的總功，會等於動能變化。
+                    題目很常直接叫你算速度。
+                  </p>
+
+                  <div className="mt-4 text-3xl font-bold text-white">
+                    W = ΔK
+                  </div>
+                </div>
+
+                <div className="border border-green-500/30 p-6 card-glow">
+                  <h3 className="text-2xl font-bold mb-4 text-yellow-300">
+                    3. 力學能守恆判斷
+                  </h3>
+
+                  <p className="text-green-300 leading-8">
+                    只要沒有摩擦力、空氣阻力這類非保守力，
+                    就可以直接使用力學能守恆。
+                  </p>
+                </div>
+
+                <div className="border border-red-500/30 bg-red-500/10 p-6">
+                  <h3 className="text-2xl font-bold mb-4 text-red-300">
+                    最容易錯的地方
+                  </h3>
+
+                  <ul className="space-y-3 text-red-200 leading-8">
+                    <li>• 動能與彈力位能都有 1/2</li>
+                    <li>• 位能不是負的就是錯，要看基準</li>
+                    <li>• cosθ 很容易忘記</li>
+                    <li>• 功率單位是 W（瓦特）</li>
+                    <li>• 高度差比高度本身重要</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {page === 'quiz' && (
+              <div className="max-w-3xl mx-auto">
+
+                <div className="border border-green-500/30 p-8 card-glow bg-green-500/5">
+                  <div className="text-sm text-green-500/60 mb-4">
+                    QUICK_TEST_MODE
+                  </div>
+
+                  <h2 className="text-3xl font-bold mb-6 leading-relaxed">
+                    {quizData[index].q}
+                  </h2>
+
+                  <div className="border border-green-500/30 p-5 bg-black/40">
+                    <div className="text-green-500/60 text-sm mb-2">
+                      ANSWER
+                    </div>
+
+                    <div className="text-2xl text-white font-bold mb-4">
+                      {quizData[index].a}
+                    </div>
+
+                    <div className="text-green-300 leading-8">
+                      {quizData[index].explain}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={nextQuestion}
+                    className="mt-6 border border-green-500 px-6 py-3 hover:bg-green-500 hover:text-black transition text-lg"
+                  >
+                    下一題
+                  </button>
+                </div>
+
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+```
+
+## 使用方式
+
+1. 將檔案存成 `physics_review.html`
+2. 用瀏覽器直接開啟即可
+3. 不需要安裝任何東西
+4. 手機與電腦都能使用
+
+## 我幫你特別整理的重點
+
+### 你一定要背熟的核心公式
+
+* F = ma
+* W = Fd cosθ
+* K = 1/2 mv²
+* W = ΔK
+* P = W/t
+* P = Fv
+* U = mgh
+* U = 1/2 kx²
+* F = kx
+* F = GMm/r²
+* U = -GMm/r
+* K₁ + U₁ = K₂ + U₂
+
+### 最常考觀念
+
+* 功的正負
+* cosθ 使用時機
+* 功能定理
+* 力學能守恆判斷
+* 彈簧題
+* 自由落體
+* 拋體運動的能量轉換
+* 重力位能高度差
+
+### 你現在最該練的
+
+因為你說你主要卡在「功」：
+
+建議順序：
+
+1. 先背 W = Fd cosθ
+2. 練功的正負
+3. 再接功能定理
+4. 最後再練力學能守恆
+
+因為後面幾乎全部都建立在「功」上。
