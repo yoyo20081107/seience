@@ -5,421 +5,232 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>高中物理段考復習系統 - 功與能量</title>
 
-  <!-- External Libraries -->
+  <!-- 基礎庫載入 -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   
-  <!-- KaTeX for Math Rendering -->
+  <!-- KaTeX 數學公式 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
     body {
       margin: 0;
       background: #0a0a0c;
-      overflow-x: hidden;
-      font-family: 'Noto+Sans+TC', sans-serif;
       color: #e2e8f0;
+      font-family: 'Noto+Sans+TC', sans-serif;
     }
 
-    .mono { font-family: 'JetBrains Mono', monospace; }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track { background: #0a0a0c; }
-    ::-webkit-scrollbar-thumb {
-      background: #3b82f6;
-      border-radius: 4px;
-    }
-
-    .scanlines::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                  linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
-      background-size: 100% 4px, 3px 100%;
-      z-index: 100;
+    /* 確保 root 至少有最小高度 */
+    #root {
+      min-height: 100vh;
     }
 
     .glass {
       background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
-    .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.2); }
-    
-    .math-display {
-      font-size: 1.25rem;
-      padding: 1rem 0;
+    .math-box {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      margin: 1rem 0;
+      text-align: center;
       color: #60a5fa;
+      font-size: 1.25rem;
     }
 
-    .topic-card:hover {
-      transform: translateY(-4px);
-      transition: all 0.3s ease;
-      border-color: #3b82f6;
+    /* 簡單的掃描線特效，不影響內容 */
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%);
+      background-size: 100% 4px;
+      z-index: 50;
     }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="bg-overlay"></div>
+  
+  <div id="root">
+    <!-- 預載入提示，如果 JS 執行成功會被蓋掉 -->
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #3b82f6; font-family: sans-serif;">
+      <div style="text-align: center;">
+        <h2>物理復習系統載入中...</h2>
+        <p style="color: #64748b;">如果長時間沒反應，請檢查網路連線或嘗試重新整理</p>
+      </div>
+    </div>
+  </div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Helper component for KaTeX
-    const Math = ({ tex, display = false }) => {
+    // 數學公式元件 (防錯版本)
+    const Math = ({ tex }) => {
       const ref = useRef();
       useEffect(() => {
-        if (ref.current) {
-          katex.render(tex, ref.current, {
-            throwOnError: false,
-            displayMode: display
-          });
+        if (ref.current && window.katex) {
+          try {
+            window.katex.render(tex, ref.current, { displayMode: true, throwOnError: false });
+          } catch (e) {
+            console.error(e);
+            ref.current.textContent = tex;
+          }
         }
-      }, [tex, display]);
-      return <span ref={ref} />;
+      }, [tex]);
+      return <div ref={ref} className="math-box" />;
     };
 
     const formulas = [
-      {
-        title: "功 (Work)",
-        formula: "W = \\vec{F} \\cdot \\vec{d} = Fd \\cos\\theta",
-        unit: "焦耳 (J)",
-        desc: "力與位移的純量積。注意 θ 是力與位移向量的夾角。",
-        teacher_tip: "垂直不作功（如向心力、正向力在水平面時）。"
-      },
-      {
-        title: "動能 (Kinetic Energy)",
-        formula: "K = \\frac{1}{2}mv^2",
-        unit: "焦耳 (J)",
-        desc: "物體由於運動而具有的能量。",
-        teacher_tip: "速度變 2 倍，動能變 4 倍！"
-      },
-      {
-        title: "功能定理 (Work-Energy Theorem)",
-        formula: "W_{net} = \\Delta K = K_f - K_i",
-        unit: "焦耳 (J)",
-        desc: "合力對物體所作的總功等於其動能的變化量。",
-        teacher_tip: "非常適合用來解末速度，不用去算加速度。"
-      },
-      {
-        title: "重力位能 (Gravitational PE)",
-        formula: "U_g = mgh",
-        unit: "焦耳 (J)",
-        desc: "在地表附近，相對於參考平面 (h=0) 的位能。",
-        teacher_tip: "位能的絕對值不重要，重要的是『變化量』。"
-      },
-      {
-        title: "彈力位能 (Elastic PE)",
-        formula: "U_s = \\frac{1}{2}kx^2",
-        unit: "焦耳 (J)",
-        desc: "彈簧形變 x 時儲存的能量。k 為彈性係數。",
-        teacher_tip: "無論伸長或壓縮，位能都是正值。"
-      },
-      {
-        title: "力學能守恆 (Conservation of ME)",
-        formula: "E = K + U = \\text{constant}",
-        unit: "焦耳 (J)",
-        desc: "當僅有保守力（如重力、彈力）作功時，系統總力學能不變。",
-        teacher_tip: "有摩擦力時，力學能『不』守恆，會轉為熱能。"
-      },
-      {
-        title: "功率 (Power)",
-        formula: "P = \\frac{W}{t} = \\vec{F} \\cdot \\vec{v}",
-        unit: "瓦特 (W = J/s)",
-        desc: "作功的速率。常用於引擎、馬達的效能計算。",
-        teacher_tip: "1 瓦特代表每秒作功 1 焦耳。"
-      },
-      {
-        title: "萬有引力位能",
-        formula: "U = -\\frac{GMm}{r}",
-        unit: "焦耳 (J)",
-        desc: "定義無窮遠處位能為 0。r 為質心距離。",
-        teacher_tip: "恆為負值，代表被束縛在引力場中。"
-      }
+      { title: "功 (Work)", formula: "W = Fd \\cos\\theta", unit: "焦耳 (J)", desc: "力與位移的乘積。垂直不作功。", tip: "注意力與位移的夾角。" },
+      { title: "動能 (Kinetic Energy)", formula: "K = \\frac{1}{2}mv^2", unit: "焦耳 (J)", desc: "運動中的能量。與速度平方成正比。", tip: "速度變2倍，動能變4倍。" },
+      { title: "功能定理", formula: "W_{net} = \\Delta K", unit: "焦耳 (J)", desc: "合力作功等於動能變化。", tip: "解末速度的強力工具。" },
+      { title: "重力位能", formula: "U = mgh", unit: "焦耳 (J)", desc: "高度帶來的能量。", tip: "高度差才是關鍵。" },
+      { title: "力學能守恆", formula: "K + U = E_{total}", unit: "焦耳 (J)", desc: "無阻力時，能量總和不變。", tip: "自由落體與拋體必考。" }
     ];
 
     const quizData = [
-      {
-        q: "一物體受 10 N 的力作用，在力方向上位移 5 m，力作功多少？",
-        options: ["2 J", "5 J", "50 J", "100 J"],
-        correct: 2,
-        explain: "W = Fd = 10 × 5 = 50 J"
-      },
-      {
-        q: "若物體的速度變為原來的 3 倍，其動能變為原來的幾倍？",
-        options: ["3 倍", "6 倍", "9 倍", "27 倍"],
-        correct: 2,
-        explain: "動能 K ∝ v²，(3)² = 9"
-      },
-      {
-        q: "下列何種力對物體繞轉時『必』不作功？",
-        options: ["重力", "摩擦力", "向心力", "推力"],
-        correct: 2,
-        explain: "向心力始終與瞬時位移垂直，故作功恆為 0。"
-      },
-      {
-        q: "一顆 1kg 的球由 5m 高處自由落下，落地的動能約為？ (g=10)",
-        options: ["5 J", "10 J", "50 J", "100 J"],
-        correct: 2,
-        explain: "力學能守恆：mgh = K，1 × 10 × 5 = 50 J"
-      },
-      {
-        q: "功率的單位『瓦特』(W) 等於下列何者？",
-        options: ["J·s", "J/s", "N·m", "kg·m/s"],
-        correct: 1,
-        explain: "P = W/t，故單位為 J/s。"
-      }
+      { q: "當推力方向與位移方向垂直時，作功為？", options: ["正功", "負功", "零", "無限大"], correct: 2, explain: "垂直不作功 (cos 90° = 0)。" },
+      { q: "一物體質量 2kg，速度 4m/s，動能為？", options: ["4J", "8J", "16J", "32J"], correct: 2, explain: "K = 1/2 * 2 * 4^2 = 16J。" },
+      { q: "自由落體過程中，什麼能量在轉換？", options: ["動能轉位能", "位能轉動能", "熱能轉位能", "不一定"], correct: 1, explain: "重力作正功，位能轉為動能。" }
     ];
 
     function App() {
       const [page, setPage] = useState('home');
-      const [quizIndex, setQuizIndex] = useState(0);
+      const [quizIdx, setQuizIdx] = useState(0);
       const [selected, setSelected] = useState(null);
-      const [showAnswer, setShowAnswer] = useState(false);
+      const [showAns, setShowAns] = useState(false);
 
-      const handleAnswer = (idx) => {
-        if (showAnswer) return;
-        setSelected(idx);
-        setShowAnswer(true);
-      };
-
-      const nextQuestion = () => {
-        setSelected(null);
-        setShowAnswer(false);
-        setQuizIndex((quizIndex + 1) % quizData.length);
-      };
+      const NavButton = ({ id, label }) => (
+        <button 
+          onClick={() => setPage(id)}
+          className={`px-4 py-2 rounded-lg transition-all text-sm font-bold ${page === id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/10'}`}
+        >
+          {label}
+        </button>
+      );
 
       return (
-        <div className="min-h-screen scanlines">
-          {/* Navigation */}
-          <nav className="glass sticky top-0 z-50 border-b border-blue-500/20">
-            <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-600 p-2 rounded-lg">
-                  <i data-lucide="atom" className="text-white"></i>
-                </div>
-                <h1 className="text-xl font-bold tracking-tight text-blue-400 mono">PHYSICS_MASTER_v2.0</h1>
-              </div>
-              <div className="flex gap-2">
-                {['home', 'formula', 'concepts', 'quiz'].map(p => (
-                  <button 
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`px-4 py-2 rounded-md transition-all text-sm uppercase tracking-wider ${page === p ? 'bg-blue-600 text-white glow-blue' : 'hover:bg-white/10 text-slate-400'}`}
-                  >
-                    {p === 'home' ? '主頁' : p === 'formula' ? '公式表' : p === 'concepts' ? '核心觀念' : '題庫練習'}
-                  </button>
-                ))}
+        <div className="relative z-10 min-h-screen pb-20">
+          {/* Header */}
+          <nav className="glass sticky top-0 px-6 py-4 mb-8">
+            <div className="max-w-5xl mx-auto flex justify-between items-center">
+              <h1 className="text-xl font-black text-blue-500 tracking-tighter">PHYSICS REVIEW</h1>
+              <div className="flex gap-1">
+                <NavButton id="home" label="主頁" />
+                <NavButton id="formula" label="公式" />
+                <NavButton id="quiz" label="測驗" />
               </div>
             </div>
           </nav>
 
-          <main className="max-w-5xl mx-auto p-6 md:p-12">
+          <main className="max-w-4xl mx-auto px-6">
             {page === 'home' && (
-              <div className="animate-in fade-in duration-700">
-                <div className="glass p-10 rounded-3xl mb-12 border-l-8 border-l-blue-500 glow-blue">
-                  <h2 className="text-5xl font-black mb-6 text-white tracking-tighter">
-                    高一物理：功與能量
-                  </h2>
-                  <p className="text-xl text-slate-300 leading-relaxed mb-8">
-                    這份復習教材針對「功、動能、位能與力學能守恆」進行深度整理。
-                    <span className="text-blue-400 block mt-2">老師叮嚀：物理不是背公式，是理解能量轉換的邏輯。</span>
-                  </p>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                      <h4 className="text-blue-400 font-bold mb-2">本次考試重點</h4>
-                      <ul className="text-slate-400 text-sm space-y-1">
-                        <li>• 功的定義與正負判定</li>
-                        <li>• 功能定理的應用（算末速）</li>
-                        <li>• 保守力與位能的關係</li>
-                        <li>• 力學能守恆與損耗</li>
-                      </ul>
-                    </div>
-                    <div className="bg-amber-900/20 p-4 rounded-xl border border-amber-500/20">
-                      <h4 className="text-amber-400 font-bold mb-2">陷阱提示</h4>
-                      <p className="text-amber-200/70 text-sm">
-                        向心力不做功、正向力有時做功、位能絕對值取決於參考面、摩擦力做功通常為負。
-                      </p>
-                    </div>
+              <div className="space-y-6">
+                <div className="glass p-8 rounded-3xl border-l-4 border-blue-500">
+                  <h2 className="text-4xl font-bold mb-4">功與能量</h2>
+                  <p className="text-slate-300 text-lg">這是本次物理段考的最核心單元。掌握能量的轉換，比死背公式更重要。</p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-6 bg-blue-900/20 border border-blue-500/30 rounded-2xl">
+                    <h3 className="text-blue-400 font-bold mb-2">重點 1：功的正負</h3>
+                    <p className="text-sm text-slate-400 leading-relaxed">同向作正功，反向作負功，垂直不作功。這會影響物體的速度快慢。</p>
+                  </div>
+                  <div className="p-6 bg-amber-900/20 border border-amber-500/30 rounded-2xl">
+                    <h3 className="text-amber-400 font-bold mb-2">重點 2：力學能守恆</h3>
+                    <p className="text-sm text-slate-400 leading-relaxed">只要忽略空氣阻力和摩擦力，動能與位能的總和就會維持固定。</p>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="glass p-6 rounded-2xl topic-card cursor-pointer" onClick={() => setPage('formula')}>
-                    <div className="text-blue-500 mb-4"><i data-lucide="calculator"></i></div>
-                    <h3 className="text-xl font-bold mb-2">公式整理</h3>
-                    <p className="text-slate-400 text-sm">收錄所有考試必背公式與單位。</p>
-                  </div>
-                  <div className="glass p-6 rounded-2xl topic-card cursor-pointer" onClick={() => setPage('concepts')}>
-                    <div className="text-green-500 mb-4"><i data-lucide="lightbulb"></i></div>
-                    <h3 className="text-xl font-bold mb-2">核心觀念</h3>
-                    <p className="text-slate-400 text-sm">打破迷思，釐清最容易搞混的觀念。</p>
-                  </div>
-                  <div className="glass p-6 rounded-2xl topic-card cursor-pointer" onClick={() => setPage('quiz')}>
-                    <div className="text-purple-500 mb-4"><i data-lucide="check-circle"></i></div>
-                    <h3 className="text-xl font-bold mb-2">題庫練習</h3>
-                    <p className="text-slate-400 text-sm">精選歷屆經典考題，即時解答。</p>
-                  </div>
-                </div>
+                <button onClick={() => setPage('formula')} className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all">
+                  查看完整公式表
+                </button>
               </div>
             )}
 
             {page === 'formula' && (
-              <div className="grid md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-6">
+                <h2 className="text-3xl font-bold text-center mb-8">必考公式整理</h2>
                 {formulas.map((f, i) => (
-                  <div key={i} className="glass p-8 rounded-2xl border-t-4 border-t-blue-500">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-2xl font-bold text-white">{f.title}</h3>
-                      <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-1 rounded mono">{f.unit}</span>
+                  <div key={i} className="glass p-6 rounded-2xl">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-xl font-bold text-blue-400">{f.title}</h3>
+                      <span className="text-xs bg-white/10 px-2 py-1 rounded">{f.unit}</span>
                     </div>
-                    <div className="math-display bg-black/40 rounded-xl p-4 mb-4 text-center">
-                      <Math tex={f.formula} display />
-                    </div>
-                    <p className="text-slate-400 text-sm mb-4 leading-relaxed">{f.desc}</p>
-                    <div className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-lg text-sm text-blue-200">
-                      <strong className="text-blue-400">老師撇步：</strong> {f.teacher_tip}
-                    </div>
+                    <Math tex={f.formula} />
+                    <p className="text-slate-400 text-sm">{f.desc}</p>
+                    <div className="mt-3 text-xs text-amber-300">💡 老師叮嚀：{f.tip}</div>
                   </div>
                 ))}
               </div>
             )}
 
-            {page === 'concepts' && (
-              <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                <section className="glass p-8 rounded-3xl">
-                  <h3 className="text-3xl font-bold mb-6 text-white border-b border-white/10 pb-4">1. 功的正負判定</h3>
-                  <div className="grid md:grid-cols-3 gap-4 text-center">
-                    <div className="p-4 bg-green-500/10 rounded-xl border border-green-500/30">
-                      <div className="text-green-400 font-bold mb-2">正功 (W > 0)</div>
-                      <p className="text-xs text-slate-400">力與位移同向 (0 ≤ θ < 90°)</p>
-                      <p className="text-xs mt-2 text-green-200">能量輸入物體</p>
-                    </div>
-                    <div className="p-4 bg-red-500/10 rounded-xl border border-red-500/30">
-                      <div className="text-red-400 font-bold mb-2">負功 (W < 0)</div>
-                      <p className="text-xs text-slate-400">力與位移反向 (90° < θ ≤ 180°)</p>
-                      <p className="text-xs mt-2 text-red-200">能量從物體輸出</p>
-                    </div>
-                    <div className="p-4 bg-slate-500/10 rounded-xl border border-white/10">
-                      <div className="text-slate-400 font-bold mb-2">不作功 (W = 0)</div>
-                      <p className="text-xs text-slate-400">力與位移垂直 (θ = 90°)</p>
-                      <p className="text-xs mt-2 text-slate-200">能量不變</p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="glass p-8 rounded-3xl">
-                  <h3 className="text-3xl font-bold mb-6 text-white border-b border-white/10 pb-4">2. 能量轉換流程圖</h3>
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-8">
-                    <div className="p-6 bg-blue-600 rounded-full text-white font-bold w-32 h-32 flex items-center justify-center text-center">作功</div>
-                    <i data-lucide="arrow-right" className="hidden md:block"></i>
-                    <i data-lucide="arrow-down" className="md:hidden"></i>
-                    <div className="p-6 bg-slate-800 rounded-2xl border border-blue-500/50 text-white font-bold w-48 h-32 flex items-center justify-center text-center">能量變化<br/><span className="text-blue-400 text-xs">(動能/位能)</span></div>
-                    <i data-lucide="arrow-right" className="hidden md:block"></i>
-                    <i data-lucide="arrow-down" className="md:hidden"></i>
-                    <div className="p-6 bg-amber-600 rounded-full text-white font-bold w-32 h-32 flex items-center justify-center text-center">狀態改變<br/><span className="text-xs font-normal">(速度/高度)</span></div>
-                  </div>
-                </section>
-
-                <section className="glass p-8 rounded-3xl bg-red-900/10 border-red-500/20">
-                  <h3 className="text-2xl font-bold mb-4 text-red-400">常考陷阱題</h3>
-                  <ul className="space-y-4 text-slate-300">
-                    <li className="flex gap-3">
-                      <span className="text-red-500 font-bold">Q1.</span> 
-                      <span>手提重物水平走動，手對重物作功？ <strong className="text-red-400">ANS: 0 (力向上位移向右，垂直)。</strong></span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="text-red-500 font-bold">Q2.</span> 
-                      <span>自由落體過程中，重力作正功或負功？ <strong className="text-green-400">ANS: 正功 (力向下位移向下，動能增加)。</strong></span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="text-red-500 font-bold">Q3.</span> 
-                      <span>有摩擦力時力學能守恆嗎？ <strong className="text-red-400">ANS: 不守恆 (部分轉為熱能)。</strong></span>
-                    </li>
-                  </ul>
-                </section>
-              </div>
-            )}
-
             {page === 'quiz' && (
-              <div className="max-w-2xl mx-auto animate-in zoom-in-95 duration-300">
-                <div className="glass p-10 rounded-3xl glow-blue">
-                  <div className="flex justify-between mb-6">
-                    <span className="text-blue-400 mono">QUESTION_{quizIndex + 1}</span>
-                    <span className="text-slate-500 text-sm">{quizIndex + 1} / {quizData.length}</span>
-                  </div>
-                  
-                  <h2 className="text-2xl font-bold mb-10 text-white leading-relaxed">
-                    {quizData[quizIndex].q}
-                  </h2>
-
-                  <div className="space-y-4">
-                    {quizData[quizIndex].options.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleAnswer(i)}
-                        className={`w-full text-left p-4 rounded-xl border transition-all ${
-                          showAnswer 
-                            ? i === quizData[quizIndex].correct
-                              ? 'bg-green-500/20 border-green-500 text-green-200'
-                              : selected === i
-                                ? 'bg-red-500/20 border-red-500 text-red-200'
-                                : 'bg-slate-800/50 border-white/5 text-slate-500'
-                            : 'bg-slate-800/50 border-white/10 text-slate-300 hover:border-blue-500 hover:bg-slate-800'
-                        }`}
-                      >
-                        <span className="mono mr-4 opacity-50">{String.fromCharCode(65 + i)}.</span>
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-
-                  {showAnswer && (
-                    <div className="mt-8 p-6 bg-blue-900/20 rounded-2xl border border-blue-500/30 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center gap-2 mb-2 text-blue-400 font-bold">
-                        <i data-lucide="info" size="18"></i> 解析
-                      </div>
-                      <p className="text-slate-300">{quizData[quizIndex].explain}</p>
-                      <button 
-                        onClick={nextQuestion}
-                        className="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-900/50"
-                      >
-                        下一題
-                      </button>
-                    </div>
-                  )}
+              <div className="glass p-8 rounded-3xl max-w-2xl mx-auto">
+                <div className="mb-6 text-blue-500 text-sm font-bold">第 {quizIdx + 1} 題 / 共 {quizData.length} 題</div>
+                <h3 className="text-2xl font-bold mb-8 leading-relaxed">{quizData[quizIdx].q}</h3>
+                
+                <div className="space-y-3">
+                  {quizData[quizIdx].options.map((opt, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => { if(!showAns) { setSelected(i); setShowAns(true); } }}
+                      className={`w-full text-left p-4 rounded-xl border transition-all ${
+                        showAns 
+                        ? i === quizData[quizIdx].correct 
+                          ? 'bg-green-500/20 border-green-500 text-green-300' 
+                          : selected === i ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-white/5 border-transparent opacity-40'
+                        : 'bg-white/5 border-white/10 hover:border-blue-500 hover:bg-white/10'
+                      }`}
+                    >
+                      {String.fromCharCode(65 + i)}. {opt}
+                    </button>
+                  ))}
                 </div>
+
+                {showAns && (
+                  <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                    <p className="font-bold text-blue-400 mb-2">正確答案：{String.fromCharCode(65 + quizData[quizIdx].correct)}</p>
+                    <p className="text-slate-300 text-sm mb-6">{quizData[quizIdx].explain}</p>
+                    <button 
+                      onClick={() => { setQuizIdx((quizIdx + 1) % quizData.length); setShowAns(false); setSelected(null); }}
+                      className="w-full py-3 bg-blue-600 rounded-lg font-bold"
+                    >
+                      下一題
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </main>
-
-          <footer className="mt-20 border-t border-white/5 py-10 text-center text-slate-500 text-sm">
-            <p>© 2026 高中物理復習系統 ｜ 祝各位同學考試順利</p>
+          
+          <footer className="mt-20 text-center text-slate-600 text-sm">
+            © 2026 高中物理段考復習系統
           </footer>
         </div>
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-    
-    // Initialize Lucide icons
-    setTimeout(() => {
-      if (window.lucide) {
-        lucide.createIcons();
+    // 確保 ReactDOM 載入完成才渲染
+    const render = () => {
+      const container = document.getElementById('root');
+      if (container && window.ReactDOM) {
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
       }
-    }, 100);
+    };
+    
+    // 稍微延遲以確保 CDN 腳本都就緒
+    setTimeout(render, 100);
   </script>
 </body>
 </html>
